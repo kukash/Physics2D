@@ -17,9 +17,11 @@ public class PhysicsComponent : MonoBehaviour
         return position;
     }
 
+    protected virtual void OtherUpdates() { }
     public void UpdateComponent()
     {
         position = new Vector2(transform.position.x, transform.position.y);
+        OtherUpdates();
     }
 
 }

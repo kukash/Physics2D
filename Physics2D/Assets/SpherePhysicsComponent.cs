@@ -5,7 +5,7 @@ using UnityEngine;
 public class SpherePhysicsComponent : PhysicsComponent
 {
     private float Radius;
-
+    private sphereMovement sphereController;
     public float GetRadius()
     {
         return Radius;
@@ -13,5 +13,11 @@ public class SpherePhysicsComponent : PhysicsComponent
     public override void InitPhysicsComponent()
     {
         Radius = transform.localScale.x*0.5f;
+        sphereController = GetComponent<sphereMovement>();
+    }
+
+    protected override void OtherUpdates()
+    {
+        sphereController?.Move();
     }
 }

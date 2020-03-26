@@ -8,6 +8,7 @@ public class PhysicsHandler : MonoBehaviour
 
     private List<PhysicsComponent> _physicsComponents;
     private List<SpherePhysicsComponent> _sphereColliders;
+    private List<LineCollider> _lineColliders;
     private List<GameObject> _PhysicsGameObjects;
 
     private List<GameObject> _CollidedObjects;
@@ -22,6 +23,7 @@ public class PhysicsHandler : MonoBehaviour
         _CollidedObjects = new List<GameObject>();
         _physicsComponents = new List<PhysicsComponent>();
         _sphereColliders = new List<SpherePhysicsComponent>();
+        _lineColliders = new List<LineCollider>();
 
         //get all tagged gameObjects
         GameObject[] newObjects = GameObject.FindGameObjectsWithTag("PhysicsObject");
@@ -39,6 +41,9 @@ public class PhysicsHandler : MonoBehaviour
                 {
                     case SpherePhysicsComponent c:
                         _sphereColliders.Add(c);
+                        break;
+                    case LineCollider c:
+                        _lineColliders.Add(c);
                         break;
                 }
             }
@@ -61,7 +66,8 @@ public class PhysicsHandler : MonoBehaviour
     {
         foreach (PhysicsComponent component in _physicsComponents)
         {
-            component.UpdateComponent();
+            //isStatic always returns false if it is not overwritten
+            if (!component.IsStatic()) component.UpdateComponent();
         }
     }
 
@@ -73,24 +79,40 @@ public class PhysicsHandler : MonoBehaviour
     {
         _CollidedObjects.Clear();
         SphereSphereCollision();
+        SphereLineCollision();
     }
 
     private void DebugCollision()
     {
-        foreach (var VARIABLE in _PhysicsGameObjects)
+        foreach (GameObject physicsGameObject in _PhysicsGameObjects)
         {
-            if (_CollidedObjects.Contains(VARIABLE))
+            if (_CollidedObjects.Contains(physicsGameObject))
             {
-                VARIABLE.GetComponent<SpriteRenderer>().color = Color.red;
+                physicsGameObject.GetComponent<SpriteRenderer>().color = Color.red;
             }
             else
             {
-                VARIABLE.GetComponent<SpriteRenderer>().color = Color.green;
+                if(!physicsGameObject.GetComponent<PhysicsComponent>().IsStatic())
+                    physicsGameObject.GetComponent<SpriteRenderer>().color = Color.green;
 
             }
         }
     }
 
+    private void SphereLineCollision()
+    {
+        foreach (SpherePhysicsComponent sphere in _sphereColliders)
+        {
+            foreach (LineCollider line in _lineColliders)
+            {
+                CollisionInfo info = Sphere_Line_Intersection(sphere, line);
+                if (info.hit)
+                {
+                    _CollidedObjects.Add(sphere.gameObject);
+                }
+            }
+        }
+    }
     private void SphereSphereCollision()
     {
         //iterate over sphere colliders
@@ -111,6 +133,18 @@ public class PhysicsHandler : MonoBehaviour
         }
     }
 
+    private CollisionInfo Sphere_Line_Intersection(SpherePhysicsComponent sphere, LineCollider line)
+    {
+        CollisionInfo info = new CollisionInfo();
+        Vector2 Delta = sphere.GetPosition() -line.GetLineStart() ;
+      
+        float dot = Vector2.Dot(line.GetLineDir(), Delta);
+        Vector2 newPos = line.GetLineStart() + line.GetLineDir().normalized * dot;
+
+        float distance = Vector2.Distance(newPos, sphere.GetPosition());
+        if (distance < sphere.GetRadius()) info.hit = true;
+        return info;
+    }
     private CollisionInfo Sphere_SphereIntersection(SpherePhysicsComponent sphereA, SpherePhysicsComponent sphereB)
     {
         CollisionInfo Info = new CollisionInfo();

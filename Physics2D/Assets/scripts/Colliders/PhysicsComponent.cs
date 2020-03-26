@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using UnityEngine;
 
 public class PhysicsComponent : MonoBehaviour
@@ -12,6 +13,11 @@ public class PhysicsComponent : MonoBehaviour
         InitPhysicsComponent();
     }
     public virtual void InitPhysicsComponent() { }
+
+    public virtual bool IsStatic()
+    {
+        return false;
+    }
     public Vector2 GetPosition()
     {
         return position;

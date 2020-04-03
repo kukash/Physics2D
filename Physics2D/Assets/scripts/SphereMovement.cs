@@ -30,6 +30,14 @@ public class SphereMovement : MonoBehaviour
             //  Vector2DFunctions.Update2DTransform(currentPos, this);
             _info.NewPosition = currentPos;
         }
+        else
+        {
+            Vector2 currentPos = Vector2DFunctions.GetTransform2D(this);
+            _info.NewPosition = currentPos;
+            _info.OldPosition = currentPos;
+
+
+        }
 
     }
 

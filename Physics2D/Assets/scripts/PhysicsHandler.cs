@@ -9,6 +9,7 @@ public class PhysicsHandler : MonoBehaviour
     private List<PhysicsComponent> _physicsComponents;
     private List<SpherePhysicsComponent> _sphereColliders;
     private List<LineCollider> _lineColliders;
+    private List<BoxPhysicsCollider> _boxColliders;
     private List<GameObject> _PhysicsGameObjects;
     private Dictionary<GameObject, PhysicsComponent> _gameObjectPhysicsComponentMap;
 
@@ -19,7 +20,7 @@ public class PhysicsHandler : MonoBehaviour
         LoadPhysicsObjects();
     }
 
-    private void LoadPhysicsObjects()
+    private void InitLists()
     {
         //init lists
         _CollidedObjects = new List<GameObject>();
@@ -28,6 +29,11 @@ public class PhysicsHandler : MonoBehaviour
         _lineColliders = new List<LineCollider>();
         _gameObjectPhysicsComponentMap = new Dictionary<GameObject, PhysicsComponent>();
         _CollidedObjectsMap = new Dictionary<GameObject, CollisionInfo>();
+        _boxColliders = new List<BoxPhysicsCollider>();
+    }
+    private void LoadPhysicsObjects()
+    {
+        InitLists();
         //get all tagged gameObjects
         GameObject[] newObjects = GameObject.FindGameObjectsWithTag("PhysicsObject");
         _PhysicsGameObjects = newObjects.ToList();
@@ -48,6 +54,9 @@ public class PhysicsHandler : MonoBehaviour
                         break;
                     case LineCollider c:
                         _lineColliders.Add(c);
+                        break;
+                    case BoxPhysicsCollider c:
+                        _boxColliders.Add(c);
                         break;
                 }
             }
@@ -95,6 +104,93 @@ public class PhysicsHandler : MonoBehaviour
         _CollidedObjectsMap.Clear();
         SphereSphereCollision();
         SphereLineCollision();
+        BoxBoxCollision();
+        //does only detect collision for corner points of box
+        BoxSphereCollision();
+    }
+
+    private void BoxSphereCollision()
+    {
+        foreach (BoxPhysicsCollider Box in _boxColliders)
+        {
+            foreach (SpherePhysicsComponent Sphere in _sphereColliders)
+            {
+                CollisionInfo inf = SpherBoxIntersection(Sphere, Box);
+                if (inf.hit)
+                {
+                    _CollidedObjects.Add(Sphere.gameObject);
+                    _CollidedObjects.Add(Box.gameObject);
+                }
+            }
+        }
+    }
+
+    private void BoxBoxCollision()
+    {
+
+        foreach (BoxPhysicsCollider currentBoxCollider in _boxColliders)
+        {
+            foreach (BoxPhysicsCollider otherBoxCollider in _boxColliders)
+            {
+                if (otherBoxCollider != currentBoxCollider)
+                {
+                    CollisionInfo inf = BoxBoxIntersection(currentBoxCollider, otherBoxCollider);
+                    if (inf.hit)
+                    {
+                        _CollidedObjects.Add(currentBoxCollider.gameObject);
+                        _CollidedObjects.Add(otherBoxCollider.gameObject);
+                    }
+                }
+            }
+        }
+
+    }
+
+    private CollisionInfo SpherBoxIntersection(SpherePhysicsComponent sphere, BoxPhysicsCollider box)
+    {
+        CollisionInfo info = new CollisionInfo();
+        Vector2 pointA = box.GetOldPosition() + new Vector2(-box.radiusX, -box.radiusY);
+        Vector2 pointB = box.GetOldPosition() + new Vector2(box.radiusX, -box.radiusY);
+        Vector2 pointC = box.GetOldPosition() + new Vector2(-box.radiusX, box.radiusY);
+        Vector2 pointD = box.GetOldPosition() + new Vector2(box.radiusX, box.radiusY);
+
+        if ((sphere.GetPosition() - pointA).magnitude < sphere.GetRadius())
+        {
+            info.hit = true;
+            return info;
+        }
+        if ((sphere.GetPosition() - pointB).magnitude < sphere.GetRadius())
+        {
+            info.hit = true;
+            return info;
+        }
+        if ((sphere.GetPosition() - pointC).magnitude < sphere.GetRadius())
+        {
+            info.hit = true;
+            return info;
+        }
+        if ((sphere.GetPosition() - pointD).magnitude < sphere.GetRadius())
+        {
+            info.hit = true;
+            return info;
+        }
+
+        return info;
+    }
+    private CollisionInfo BoxBoxIntersection(BoxPhysicsCollider a, BoxPhysicsCollider b)
+    {
+        CollisionInfo info = new CollisionInfo();
+
+        if (a.Info.OldPosition.x - a.radiusX < b.Info.OldPosition.x + b.radiusX
+            && a.Info.OldPosition.x + a.radiusX > b.Info.OldPosition.x - b.radiusX
+            && a.Info.OldPosition.y - a.radiusY < b.Info.OldPosition.y + b.radiusY
+            && a.Info.OldPosition.y + a.radiusY > b.Info.OldPosition.y - b.radiusY
+        )
+        {
+            info.hit = true;
+        }
+
+        return info;
     }
 
     private void DebugCollision()
@@ -105,8 +201,8 @@ public class PhysicsHandler : MonoBehaviour
             {
                 physicsGameObject.GetComponent<SpriteRenderer>().color = Color.red;
                 _gameObjectPhysicsComponentMap[physicsGameObject].Info.Speed = 0;
-                physicsGameObject.GetComponent<PhysicsInfo>().NewPosition =
-                    _CollidedObjectsMap[physicsGameObject].PointOfImpact;
+                //physicsGameObject.GetComponent<PhysicsInfo>().NewPosition =
+                //    _CollidedObjectsMap[physicsGameObject].PointOfImpact;
             }
             else
             {

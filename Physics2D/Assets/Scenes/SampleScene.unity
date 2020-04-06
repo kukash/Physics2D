@@ -217,7 +217,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &42967738
 Transform:
   m_ObjectHideFlags: 0
@@ -360,6 +360,7 @@ MonoBehaviour:
   Velocity: {x: 0, y: 0}
   OldPosition: {x: 0, y: 0}
   NewPosition: {x: 0, y: 0}
+  verticies: []
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -556,6 +557,7 @@ MonoBehaviour:
   Velocity: {x: 0, y: 0}
   OldPosition: {x: 0, y: 0}
   NewPosition: {x: 0, y: 0}
+  verticies: []
 --- !u!1 &592603261
 GameObject:
   m_ObjectHideFlags: 0
@@ -621,6 +623,7 @@ MonoBehaviour:
   Velocity: {x: 0, y: 0}
   OldPosition: {x: 0, y: 0}
   NewPosition: {x: 0, y: 0}
+  verticies: []
 --- !u!212 &592603265
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -736,6 +739,7 @@ MonoBehaviour:
   Velocity: {x: 0, y: 0}
   OldPosition: {x: 0, y: 0}
   NewPosition: {x: 0, y: 0}
+  verticies: []
 --- !u!212 &887629848
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -899,6 +903,7 @@ MonoBehaviour:
   Velocity: {x: 0, y: 0}
   OldPosition: {x: 0, y: 0}
   NewPosition: {x: 0, y: 0}
+  verticies: []
 --- !u!1 &970246434
 GameObject:
   m_ObjectHideFlags: 0
@@ -990,7 +995,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1601889609
 Transform:
   m_ObjectHideFlags: 0
@@ -1154,6 +1159,7 @@ MonoBehaviour:
   Velocity: {x: 0, y: 0}
   OldPosition: {x: 0, y: 0}
   NewPosition: {x: 0, y: 0}
+  verticies: []
 --- !u!1 &2019067300
 GameObject:
   m_ObjectHideFlags: 0
@@ -1267,3 +1273,4 @@ MonoBehaviour:
   Velocity: {x: 0, y: 0}
   OldPosition: {x: 0, y: 0}
   NewPosition: {x: 0, y: 0}
+  verticies: []

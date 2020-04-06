@@ -9,4 +9,6 @@ public class PhysicsInfo : MonoBehaviour
     public Vector2 Velocity = Vector2.zero;
     public Vector2 OldPosition = Vector2.zero;
     public Vector2 NewPosition = Vector2.zero;
+    public Vector2[] verticies;
+
 }

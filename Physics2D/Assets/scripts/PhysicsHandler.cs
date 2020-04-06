@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -140,6 +141,10 @@ public class PhysicsHandler : MonoBehaviour
                         _CollidedObjects.Add(currentBoxCollider.gameObject);
                         _CollidedObjects.Add(otherBoxCollider.gameObject);
                     }
+                    else
+                    {
+                        Debug.Log("no collision");
+                    }
                 }
             }
         }
@@ -180,16 +185,42 @@ public class PhysicsHandler : MonoBehaviour
     private CollisionInfo BoxBoxIntersection(BoxPhysicsCollider a, BoxPhysicsCollider b)
     {
         CollisionInfo info = new CollisionInfo();
-
-        if (a.Info.OldPosition.x - a.radiusX < b.Info.OldPosition.x + b.radiusX
-            && a.Info.OldPosition.x + a.radiusX > b.Info.OldPosition.x - b.radiusX
-            && a.Info.OldPosition.y - a.radiusY < b.Info.OldPosition.y + b.radiusY
-            && a.Info.OldPosition.y + a.radiusY > b.Info.OldPosition.y - b.radiusY
-        )
+        foreach (Axis currentAxis in a.Axises)
         {
-            info.hit = true;
+
+            Vector2 axis = currentAxis.AxisNormal;
+            Debug.Log("Axis: " + axis);
+            Tuple<float, float> minMaxA = ProjectShape.Project(axis, a.Info.verticies);
+            Tuple<float, float> minMaxB = ProjectShape.Project(axis, b.Info.verticies);
+            Debug.Log("minmax A" + minMaxA);
+            Debug.Log("minmax B" + minMaxB);
+
+            if (!ProjectShape.Overlap(minMaxA, minMaxB))
+            {
+                info.hit = false;
+                return info;
+            }
+            else
+            {
+                Debug.Log("projection overlaps");
+            }
+        }
+        foreach (Axis currentAxis in b.Axises)
+        {
+
+            Vector2 axis = currentAxis.AxisNormal;
+            Debug.Log("Axis: " + axis);
+            Tuple<float, float> minMaxA = ProjectShape.Project(axis, a.Info.verticies);
+            Tuple<float, float> minMaxB = ProjectShape.Project(axis, b.Info.verticies);
+            if (!ProjectShape.Overlap(minMaxA, minMaxB))
+            {
+                info.hit = false;
+                return info;
+            }
         }
 
+
+        info.hit = true;
         return info;
     }
 
@@ -322,7 +353,50 @@ public class PhysicsHandler : MonoBehaviour
     }
 }
 
+public static class ProjectShape
+{
+    public static Tuple<float, float> Project(Vector2 axis, Vector2[] ShapeVerticies)
+    {
+        //set min and max to the dot value of the first vertex
+        float min;
+        float max;
+        min = Vector2.Dot(axis, ShapeVerticies[0]);
+        max = min;
+        //For the rest of the verticies calculate the dot product & store it as min / max if its smaller / larger than min / max
+        for (int i = 1; i < ShapeVerticies.Length; i++)
+        {
+            float currentDot = Vector2.Dot(axis, ShapeVerticies[i]);
+            if (currentDot < min)
+            {
+                min = currentDot;
+            }
+            else if (currentDot > max)
+            {
+                max = currentDot;
+            }
+        }
 
+        Tuple<float, float> returnType = new Tuple<float, float>(min, max);
+
+        return returnType;
+    }
+
+    public static bool Overlap(Tuple<float, float> a, Tuple<float, float> b)
+    {
+        //b min is in between a min and a max --> overlap
+        if (a.Item1 < b.Item1 && b.Item1 < a.Item2)
+        {
+            return true;
+        }
+        //a min is in between b min and b max --> overlap
+        if (a.Item1 > b.Item1 && a.Item1 < b.Item2)
+        {
+            return true;
+        }
+
+        return false;
+    }
+}
 public class CollisionInfo
 {
     public bool hit;

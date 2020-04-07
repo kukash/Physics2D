@@ -103,11 +103,11 @@ public class PhysicsHandler : MonoBehaviour
     {
         _CollidedObjects.Clear();
         _CollidedObjectsMap.Clear();
-        SphereSphereCollision();
-        SphereLineCollision();
+        //SphereSphereCollision();
+        //SphereLineCollision();
         BoxBoxCollision();
         //does only detect collision for corner points of box
-        BoxSphereCollision();
+        //BoxSphereCollision();
     }
 
     private void BoxSphereCollision()

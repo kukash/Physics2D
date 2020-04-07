@@ -24,10 +24,26 @@ public class BoxPhysicsCollider : PhysicsComponent
 
     private void WriteAxises()
     {
-        Info.verticies[0] = new Vector2(Info.NewPosition.x - radiusX, Info.NewPosition.y - radiusY);
-        Info.verticies[1] = new Vector2(Info.NewPosition.x + radiusX, Info.NewPosition.y - radiusY);
-        Info.verticies[2] = new Vector2(Info.NewPosition.x + radiusX, Info.NewPosition.y + radiusY);
-        Info.verticies[3] = new Vector2(Info.NewPosition.x - radiusX, Info.NewPosition.y + radiusY);
+        float rotationAngle = transform.eulerAngles.z;
+
+        Vector2 upVec = Vector2.down;
+        upVec = Vector2DFunctions.RotateVec(upVec, rotationAngle);
+        upVec = upVec.normalized * radiusY;
+
+        Vector2 rightVec = Vector2.right;
+        rightVec = Vector2DFunctions.RotateVec(rightVec, rotationAngle);
+        rightVec = rightVec.normalized * radiusX;
+
+        Info.verticies[0] = Info.NewPosition - rightVec - upVec;
+        Info.verticies[1] = Info.NewPosition + rightVec - upVec;
+        Info.verticies[2] = Info.NewPosition + rightVec + upVec;
+        Info.verticies[3] = Info.NewPosition - rightVec + upVec;
+  
+
+        //Info.verticies[0] = new Vector2(Info.NewPosition.x - radiusX, Info.NewPosition.y - radiusY);
+        //Info.verticies[1] = new Vector2(Info.NewPosition.x + radiusX, Info.NewPosition.y - radiusY);
+        //Info.verticies[2] = new Vector2(Info.NewPosition.x + radiusX, Info.NewPosition.y + radiusY);
+        //Info.verticies[3] = new Vector2(Info.NewPosition.x - radiusX, Info.NewPosition.y + radiusY);
         Axises[0] = new Axis(Info.verticies[0], Info.verticies[1]);
         Axises[1] = new Axis(Info.verticies[1], Info.verticies[2]);
         Axises[2] = new Axis(Info.verticies[2], Info.verticies[3]);
@@ -38,7 +54,7 @@ public class BoxPhysicsCollider : PhysicsComponent
     {
         Info.OldPosition = Vector2DFunctions.GetTransform2D(this);
         Info.NewPosition = Info.OldPosition;
-        WriteAxises();
+       // WriteAxises();
     }
 }
 public class Axis

@@ -2,24 +2,38 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BoxPhysicsCollider : PhysicsComponent
+public class SATCollider : PhysicsComponent
 {
+    public enum SATType
+    {
+        BOX_COLLIDER
+    }
+
+    [SerializeField] private SATType Type = SATType.BOX_COLLIDER;
     public float radiusX;
     public float radiusY;
+    public bool Static;
     public Axis[] Axises;
     public override void InitPhysicsComponent()
     {
+
+        Info = GetComponent<PhysicsInfo>();
         radiusX = transform.localScale.x * 0.5f;
         radiusY = transform.localScale.y * 0.5f;
-        Info = new PhysicsInfo();
         Info.OldPosition = Vector2DFunctions.GetTransform2D(this);
         Info.NewPosition = Info.OldPosition;
-        Debug.Log("position : " + Info.OldPosition);
-        Debug.Log("scaleX " + radiusX);
-        Debug.Log("scaleY " + radiusY);
         Axises = new Axis[4];
         Info.verticies = new Vector2[4];
+        Info.IsStatic = Static;
+        Info.radius = transform.localScale.x / 2;
         WriteAxises();
+
+        if (GetComponent<MoverComponent>())
+        {
+            Info.mover = GetComponent<MoverComponent>();
+            Info.mover.Init();
+            Info.Speed = Info.mover.GetSpeed();
+        }
     }
 
     private void WriteAxises()
@@ -34,16 +48,11 @@ public class BoxPhysicsCollider : PhysicsComponent
         rightVec = Vector2DFunctions.RotateVec(rightVec, rotationAngle);
         rightVec = rightVec.normalized * radiusX;
 
-        Info.verticies[0] = Info.NewPosition - rightVec - upVec;
-        Info.verticies[1] = Info.NewPosition + rightVec - upVec;
-        Info.verticies[2] = Info.NewPosition + rightVec + upVec;
-        Info.verticies[3] = Info.NewPosition - rightVec + upVec;
-  
+        Info.verticies[0] = Info.OldPosition - rightVec - upVec;
+        Info.verticies[1] = Info.OldPosition + rightVec - upVec;
+        Info.verticies[2] = Info.OldPosition + rightVec + upVec;
+        Info.verticies[3] = Info.OldPosition - rightVec + upVec;
 
-        //Info.verticies[0] = new Vector2(Info.NewPosition.x - radiusX, Info.NewPosition.y - radiusY);
-        //Info.verticies[1] = new Vector2(Info.NewPosition.x + radiusX, Info.NewPosition.y - radiusY);
-        //Info.verticies[2] = new Vector2(Info.NewPosition.x + radiusX, Info.NewPosition.y + radiusY);
-        //Info.verticies[3] = new Vector2(Info.NewPosition.x - radiusX, Info.NewPosition.y + radiusY);
         Axises[0] = new Axis(Info.verticies[0], Info.verticies[1]);
         Axises[1] = new Axis(Info.verticies[1], Info.verticies[2]);
         Axises[2] = new Axis(Info.verticies[2], Info.verticies[3]);
@@ -52,14 +61,23 @@ public class BoxPhysicsCollider : PhysicsComponent
 
     public override void Step()
     {
-        Info.OldPosition = Vector2DFunctions.GetTransform2D(this);
-        Info.NewPosition = Info.OldPosition;
-       // WriteAxises();
+
+        if (!Static)
+        {
+            Info.OldPosition = Vector2DFunctions.GetTransform2D(this);
+            Vector2DFunctions.Update2DTransform(Info.NewPosition, this);
+            WriteAxises();
+            //   Debug.Log("not static");
+            if (Info.mover)
+            {
+                Info.mover.Step();
+                // Debug.Log("has mover");
+            }
+        }
     }
 }
 public class Axis
 {
-
     public Vector2 axisStart;
     public Vector2 axisEnd;
     public Vector2 axisDir;

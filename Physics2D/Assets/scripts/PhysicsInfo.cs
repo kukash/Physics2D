@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,5 +11,10 @@ public class PhysicsInfo : MonoBehaviour
     public Vector2 OldPosition = Vector2.zero;
     public Vector2 NewPosition = Vector2.zero;
     public Vector2[] verticies;
-
+    public bool HasMoved = true;
+    public bool IsStatic = true;
+    public float radius = 0;
+    public MoverComponent mover = null;
+  //  public bool[,] gridPos;
+    public List<Vector2Int> gridPos;
 }

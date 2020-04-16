@@ -5,14 +5,16 @@ using UnityEngine;
 public class SpherePhysicsComponent : PhysicsComponent
 {
     private float Radius;
-    private SphereMovement _mover;
+    private MoverComponent _mover;
     public float GetRadius()
     {
         return Radius;
     }
     public override void InitPhysicsComponent()
     {
-        _mover = GetComponent<SphereMovement>();
+        Info = GetComponent<PhysicsInfo>();
+
+        _mover = GetComponent<MoverComponent>();
         Radius = transform.localScale.x * 0.5f;
     }
 

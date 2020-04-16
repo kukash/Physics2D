@@ -2,43 +2,114 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class PhysicsHandler : MonoBehaviour
 {
-
+    public bool spawnRandomObjects = true;
+    public int staticObjectCount = 100;
+    public int movingObjectsCount = 0;
+    public GameObject staticPrefab;
+    public GameObject movingPrefab;
     private List<PhysicsComponent> _physicsComponents;
     private List<SpherePhysicsComponent> _sphereColliders;
     private List<LineCollider> _lineColliders;
-    private List<BoxPhysicsCollider> _boxColliders;
+    private List<SATCollider> _SATColliders;
     private List<GameObject> _PhysicsGameObjects;
     private Dictionary<GameObject, PhysicsComponent> _gameObjectPhysicsComponentMap;
 
+    private List<SATCollider> _movingColliders;
+
     private List<GameObject> _CollidedObjects;
     private Dictionary<GameObject, CollisionInfo> _CollidedObjectsMap;
+
+    private PartitioningGrid grid;
+
+    private int _leftBound;
+    private int _rightBound;
+    private int _topBound;
+    private int _botBound;
     void Start()
     {
-        LoadPhysicsObjects();
+        if (!movingPrefab.GetComponent<PhysicsComponent>() || !staticPrefab.GetComponent<PhysicsComponent>())
+        {
+            Debug.LogError("PREFAB ASSIGNED DOES NOT HAVE PHYSICS COMPONENT");
+        }
+        InitLists();
+        InitGrid();
+        if (spawnRandomObjects) { Spawn(); }
+        //  LoadPhysicsObjects();
+        //  InitGrid();
     }
 
+    private void Spawn()
+    {
+        for (int i = 0; i < staticObjectCount; i++)
+        {
+            createObject(staticPrefab);
+        }
+
+        for (int i = 0; i < movingObjectsCount; i++)
+        {
+            createObject(movingPrefab);
+        }
+        grid.InitialPhysicsComponentSort(_SATColliders);
+    }
+    private void createObject(GameObject prefab)
+    {
+        float newX = Random.Range((float)_leftBound + 5, (float)_rightBound - 5);
+        float newY = Random.Range((float)_botBound + 5, (float)_topBound - 5);
+
+        Vector2 pos = new Vector2(newX, newY);
+        Debug.Log(pos);
+        GameObject newObject = Instantiate(prefab);
+        Vector2DFunctions.Update2DTransform(pos, newObject.transform);
+        SATCollider collider = newObject.GetComponent<SATCollider>();
+        _SATColliders.Add(collider);
+        collider.InitPhysicsComponent();
+        _PhysicsGameObjects.Add(newObject);
+        _physicsComponents.Add(collider);
+        _gameObjectPhysicsComponentMap.Add(newObject, collider);
+        if (!collider.Static)
+        {
+            _movingColliders.Add(collider);
+        }
+    }
+    private void InitGrid()
+    {
+        grid = GetComponent<PartitioningGrid>();
+        if (grid)
+        {
+            grid.InitGrid();
+            _leftBound = -grid.GridWidth / 2;
+            _rightBound = -_leftBound;
+            _topBound = grid.GridHeight / 2;
+            _botBound = -_topBound;
+
+        }
+    }
     private void InitLists()
     {
         //init lists
+        _movingColliders = new List<SATCollider>();
+        _PhysicsGameObjects = new List<GameObject>();
         _CollidedObjects = new List<GameObject>();
         _physicsComponents = new List<PhysicsComponent>();
         _sphereColliders = new List<SpherePhysicsComponent>();
         _lineColliders = new List<LineCollider>();
         _gameObjectPhysicsComponentMap = new Dictionary<GameObject, PhysicsComponent>();
         _CollidedObjectsMap = new Dictionary<GameObject, CollisionInfo>();
-        _boxColliders = new List<BoxPhysicsCollider>();
+        _SATColliders = new List<SATCollider>();
     }
     private void LoadPhysicsObjects()
     {
-        InitLists();
+
         //get all tagged gameObjects
         GameObject[] newObjects = GameObject.FindGameObjectsWithTag("PhysicsObject");
         _PhysicsGameObjects = newObjects.ToList();
-        Debug.Log("Registered " + _PhysicsGameObjects.Count + " new Physics GameObjects");
 
         //store components in corresponding lists
         foreach (GameObject otherGameObject in _PhysicsGameObjects)
@@ -48,6 +119,7 @@ public class PhysicsHandler : MonoBehaviour
                 PhysicsComponent newComponent = otherGameObject.GetComponent<PhysicsComponent>();
                 _physicsComponents.Add(newComponent);
                 _gameObjectPhysicsComponentMap.Add(otherGameObject, newComponent);
+                newComponent.InitPhysicsComponent();
                 switch (newComponent)
                 {
                     case SpherePhysicsComponent c:
@@ -56,8 +128,8 @@ public class PhysicsHandler : MonoBehaviour
                     case LineCollider c:
                         _lineColliders.Add(c);
                         break;
-                    case BoxPhysicsCollider c:
-                        _boxColliders.Add(c);
+                    case SATCollider c:
+                        _SATColliders.Add(c);
                         break;
                 }
             }
@@ -66,7 +138,6 @@ public class PhysicsHandler : MonoBehaviour
                 Debug.LogWarning("GameObject Tagged as physics object is missing physics component");
             }
         }
-        Debug.Log("Registered " + _sphereColliders.Count + " sphere collider");
     }
 
     void FixedUpdate()
@@ -80,18 +151,47 @@ public class PhysicsHandler : MonoBehaviour
 
     private void UpdateObjects()
     {
+        //  Debug.Log("components :" + _physicsComponents.Count);
         foreach (PhysicsComponent component in _physicsComponents)
         {
             if (!component.IsStatic()) component.UpdateComponent();
+            ReflectOnBorders(component);
         }
     }
+    //oversimplified reflection for debugging
+    private void ReflectOnBorders(PhysicsComponent component)
+    {
+        float radius = component.Info.radius;
+        Vector2 pos = component.Info.NewPosition;
 
+        if (pos.x + radius > _rightBound-1)
+        {
+            component.Info.Direction = Vector2.Reflect(component.Info.Direction, Vector2.left);
+        }
+
+        if (pos.x - radius < _leftBound+1)
+        {
+            component.Info.Direction = Vector2.Reflect(component.Info.Direction, Vector2.right);
+        }
+
+        if (pos.y + radius > _topBound-1)
+        {
+            component.Info.Direction = Vector2.Reflect(component.Info.Direction, Vector2.down);
+        }
+        if (pos.y - radius < _botBound+1)
+        {
+            component.Info.Direction = Vector2.Reflect(component.Info.Direction, Vector2.up);
+        }
+    }
     private void StartUpdate()
     {
+
+        grid.UpdateColliders(_movingColliders);
+
         foreach (PhysicsComponent component in _physicsComponents)
         {
             //isStatic always returns false if it is not overwritten
-            if (!component.IsStatic()) component.Step();
+            if (!component.IsStatic()) { component.Step(); }
         }
     }
 
@@ -105,14 +205,15 @@ public class PhysicsHandler : MonoBehaviour
         _CollidedObjectsMap.Clear();
         //SphereSphereCollision();
         //SphereLineCollision();
-        BoxBoxCollision();
+        // SATCollision();
+        GridSATCollision();
         //does only detect collision for corner points of box
         //BoxSphereCollision();
     }
 
     private void BoxSphereCollision()
     {
-        foreach (BoxPhysicsCollider Box in _boxColliders)
+        foreach (SATCollider Box in _SATColliders)
         {
             foreach (SpherePhysicsComponent Sphere in _sphereColliders)
             {
@@ -125,33 +226,65 @@ public class PhysicsHandler : MonoBehaviour
             }
         }
     }
-
-    private void BoxBoxCollision()
+    private void GridSATCollision()
     {
-
-        foreach (BoxPhysicsCollider currentBoxCollider in _boxColliders)
+        foreach (ComponentContainer sortedGrid in grid.GetSortedGrid())
         {
-            foreach (BoxPhysicsCollider otherBoxCollider in _boxColliders)
+            List<SATCollider> colliders = sortedGrid.list;
+            for (int i = 0; i < colliders.Count; i++)
             {
-                if (otherBoxCollider != currentBoxCollider)
+                for (int j = i; j < colliders.Count; j++)
                 {
-                    CollisionInfo inf = BoxBoxIntersection(currentBoxCollider, otherBoxCollider);
+                    CollisionInfo inf = SATIntersection(colliders[i], colliders[j]);
                     if (inf.hit)
                     {
-                        _CollidedObjects.Add(currentBoxCollider.gameObject);
-                        _CollidedObjects.Add(otherBoxCollider.gameObject);
-                    }
-                    else
-                    {
-                        Debug.Log("no collision");
+                        _CollidedObjects.Add(colliders[i].gameObject);
+                        _CollidedObjects.Add(colliders[j].gameObject);
                     }
                 }
             }
         }
+    }
+    private void SATCollision()
+    {
+        for (int i = 0; i < _SATColliders.Count; i++)
+        {
+            for (int j = i; j < _SATColliders.Count; j++)
+            {
+                CollisionInfo inf = SATIntersection(_SATColliders[i], _SATColliders[j]);
+                if (inf.hit)
+                {
+                    _CollidedObjects.Add(_SATColliders[i].gameObject);
+                    _CollidedObjects.Add(_SATColliders[j].gameObject);
+                }
+                else
+                {
+                }
+            }
+        }
+        //foreach (SATCollider currentBoxCollider in _SATColliders)
+        //{
+        //    foreach (SATCollider otherBoxCollider in _SATColliders)
+        //    {
+        //        if (otherBoxCollider != currentBoxCollider)
+        //        {
+        //            CollisionInfo inf = SATIntersection(currentBoxCollider, otherBoxCollider);
+        //            if (inf.hit)
+        //            {
+        //                _CollidedObjects.Add(currentBoxCollider.gameObject);
+        //                _CollidedObjects.Add(otherBoxCollider.gameObject);
+        //            }
+        //            else
+        //            {
+        //                Debug.Log("no collision");
+        //            }
+        //        }
+        //    }
+        //}
 
     }
 
-    private CollisionInfo SpherBoxIntersection(SpherePhysicsComponent sphere, BoxPhysicsCollider box)
+    private CollisionInfo SpherBoxIntersection(SpherePhysicsComponent sphere, SATCollider box)
     {
         CollisionInfo info = new CollisionInfo();
         Vector2 pointA = box.GetOldPosition() + new Vector2(-box.radiusX, -box.radiusY);
@@ -182,34 +315,27 @@ public class PhysicsHandler : MonoBehaviour
 
         return info;
     }
-    private CollisionInfo BoxBoxIntersection(BoxPhysicsCollider a, BoxPhysicsCollider b)
+    private CollisionInfo SATIntersection(SATCollider a, SATCollider b)
     {
         CollisionInfo info = new CollisionInfo();
         foreach (Axis currentAxis in a.Axises)
         {
-
             Vector2 axis = currentAxis.AxisNormal;
-            Debug.Log("Axis: " + axis);
+            //returns the minimum and maximum Dot product between the axis and all the verticies
             Tuple<float, float> minMaxA = ProjectShape.Project(axis, a.Info.verticies);
             Tuple<float, float> minMaxB = ProjectShape.Project(axis, b.Info.verticies);
-            Debug.Log("minmax A" + minMaxA);
-            Debug.Log("minmax B" + minMaxB);
 
             if (!ProjectShape.Overlap(minMaxA, minMaxB))
             {
+                //stop collision detection if no Overlap was calculated
                 info.hit = false;
                 return info;
-            }
-            else
-            {
-                Debug.Log("projection overlaps");
             }
         }
         foreach (Axis currentAxis in b.Axises)
         {
 
             Vector2 axis = currentAxis.AxisNormal;
-            Debug.Log("Axis: " + axis);
             Tuple<float, float> minMaxA = ProjectShape.Project(axis, a.Info.verticies);
             Tuple<float, float> minMaxB = ProjectShape.Project(axis, b.Info.verticies);
             if (!ProjectShape.Overlap(minMaxA, minMaxB))
@@ -231,7 +357,7 @@ public class PhysicsHandler : MonoBehaviour
             if (_CollidedObjects.Contains(physicsGameObject))
             {
                 physicsGameObject.GetComponent<SpriteRenderer>().color = Color.red;
-                _gameObjectPhysicsComponentMap[physicsGameObject].Info.Speed = 0;
+                //   _gameObjectPhysicsComponentMap[physicsGameObject].Info.Speed = 0;
                 //physicsGameObject.GetComponent<PhysicsInfo>().NewPosition =
                 //    _CollidedObjectsMap[physicsGameObject].PointOfImpact;
             }
@@ -239,7 +365,6 @@ public class PhysicsHandler : MonoBehaviour
             {
                 if (!physicsGameObject.GetComponent<PhysicsComponent>().IsStatic())
                     physicsGameObject.GetComponent<SpriteRenderer>().color = Color.green;
-
             }
         }
     }
@@ -289,30 +414,17 @@ public class PhysicsHandler : MonoBehaviour
 
         if (sphereInfo.Speed > 0)
         {
-            //Debug.Log("Old position" + sphereInfo.OldPosition);
-            //Debug.Log("old distance :" + SphereLineDistance(sphereInfo.OldPosition, line));
-            //Debug.Log("New position" + sphereInfo.NewPosition);
-            //Debug.Log("new distance :" + SphereLineDistance(sphereInfo.NewPosition, line));
+
             float oldDistance = SphereLineDistance(sphereInfo.OldPosition, line);
             float newDistance = SphereLineDistance(sphereInfo.NewPosition, line);
             float a = oldDistance - sphere.GetRadius();
             float b = oldDistance + newDistance;
-            //   Vector2 delta = sphereInfo.NewPosition - sphereInfo.OldPosition;
 
-            // float b = Vector2DFunctions.Length(delta);
             float t = a / b;
 
             Vector2 offset = sphereInfo.Direction.normalized * t * sphereInfo.Velocity;
-            //a<b
-            //Debug.Log("Delta " + delta);
-            //Debug.Log("a: " + a);
-            //Debug.Log("b: " + b);
-            //Debug.Log("t: " + t);
-            //Debug.Log("speed " + sphereInfo.Speed);
-            //Debug.Log("Dir " + sphereInfo.Direction);
-            //Debug.Log("offset " + offset);
+
             pointOfImpact = sphereInfo.OldPosition + offset;
-            // Debug.Log("poi: " + POI);
 
         }
 

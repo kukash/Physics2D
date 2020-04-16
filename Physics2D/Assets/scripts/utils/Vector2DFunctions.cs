@@ -22,6 +22,12 @@ public struct Vector2DFunctions
         Vector3 pos3D = new Vector3(newPos.x, newPos.y, z);
         unityScript.transform.position = pos3D;
     }
+    public static void Update2DTransform(Vector2 newPos, Transform targetTransform)
+    {
+        float z = targetTransform.position.z;
+        Vector3 pos3D = new Vector3(newPos.x, newPos.y, z);
+        targetTransform.transform.position = pos3D;
+    }
 
     public static Vector2 PerpendicularClockwise(Vector2 vector)
     {

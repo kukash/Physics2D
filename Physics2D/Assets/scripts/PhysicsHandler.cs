@@ -224,7 +224,7 @@ public class PhysicsHandler : MonoBehaviour
             {
                 for (int j = i; j < colliders.Count; j++)
                 {
-                    CollisionInfo inf = BoxBoxIntersection(colliders[i], colliders[j]);
+                    CollisionInfo inf = SATIntersection(colliders[i], colliders[j]);
                     if (inf.hit)
                     {
                         _CollidedObjects.Add(colliders[i].gameObject);
@@ -240,7 +240,7 @@ public class PhysicsHandler : MonoBehaviour
         {
             for (int j = i; j < _SATColliders.Count; j++)
             {
-                CollisionInfo inf = BoxBoxIntersection(_SATColliders[i], _SATColliders[j]);
+                CollisionInfo inf = SATIntersection(_SATColliders[i], _SATColliders[j]);
                 if (inf.hit)
                 {
                     _CollidedObjects.Add(_SATColliders[i].gameObject);
@@ -257,7 +257,7 @@ public class PhysicsHandler : MonoBehaviour
         //    {
         //        if (otherBoxCollider != currentBoxCollider)
         //        {
-        //            CollisionInfo inf = BoxBoxIntersection(currentBoxCollider, otherBoxCollider);
+        //            CollisionInfo inf = SATIntersection(currentBoxCollider, otherBoxCollider);
         //            if (inf.hit)
         //            {
         //                _CollidedObjects.Add(currentBoxCollider.gameObject);
@@ -304,23 +304,22 @@ public class PhysicsHandler : MonoBehaviour
 
         return info;
     }
-    private CollisionInfo BoxBoxIntersection(SATCollider a, SATCollider b)
+    private CollisionInfo SATIntersection(SATCollider a, SATCollider b)
     {
         CollisionInfo info = new CollisionInfo();
         foreach (Axis currentAxis in a.Axises)
         {
-
             Vector2 axis = currentAxis.AxisNormal;
+            //returns the minimum and maximum Dot product between the axis and all the verticies
             Tuple<float, float> minMaxA = ProjectShape.Project(axis, a.Info.verticies);
             Tuple<float, float> minMaxB = ProjectShape.Project(axis, b.Info.verticies);
-
-
+            
             if (!ProjectShape.Overlap(minMaxA, minMaxB))
             {
+                //stop collision detection if no Overlap was calculated
                 info.hit = false;
                 return info;
             }
-
         }
         foreach (Axis currentAxis in b.Axises)
         {
@@ -404,30 +403,17 @@ public class PhysicsHandler : MonoBehaviour
 
         if (sphereInfo.Speed > 0)
         {
-            //Debug.Log("Old position" + sphereInfo.OldPosition);
-            //Debug.Log("old distance :" + SphereLineDistance(sphereInfo.OldPosition, line));
-            //Debug.Log("New position" + sphereInfo.NewPosition);
-            //Debug.Log("new distance :" + SphereLineDistance(sphereInfo.NewPosition, line));
+         
             float oldDistance = SphereLineDistance(sphereInfo.OldPosition, line);
             float newDistance = SphereLineDistance(sphereInfo.NewPosition, line);
             float a = oldDistance - sphere.GetRadius();
             float b = oldDistance + newDistance;
-            //   Vector2 delta = sphereInfo.NewPosition - sphereInfo.OldPosition;
 
-            // float b = Vector2DFunctions.Length(delta);
             float t = a / b;
 
             Vector2 offset = sphereInfo.Direction.normalized * t * sphereInfo.Velocity;
-            //a<b
-            //Debug.Log("Delta " + delta);
-            //Debug.Log("a: " + a);
-            //Debug.Log("b: " + b);
-            //Debug.Log("t: " + t);
-            //Debug.Log("speed " + sphereInfo.Speed);
-            //Debug.Log("Dir " + sphereInfo.Direction);
-            //Debug.Log("offset " + offset);
+         
             pointOfImpact = sphereInfo.OldPosition + offset;
-            // Debug.Log("poi: " + POI);
 
         }
 

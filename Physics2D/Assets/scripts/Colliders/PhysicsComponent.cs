@@ -8,9 +8,7 @@ public class PhysicsComponent : MonoBehaviour
     public PhysicsInfo Info;
     void Start()
     {
-        Info = GetComponent<PhysicsInfo>();
 
-        InitPhysicsComponent();
     }
     public virtual void InitPhysicsComponent() { }
 
@@ -32,7 +30,6 @@ public class PhysicsComponent : MonoBehaviour
     public void UpdateComponent()
     {
         Vector2DFunctions.Update2DTransform(Info.NewPosition, this);
-        //position = new Vector2(transform.position.x, transform.position.y);
     }
 
 }

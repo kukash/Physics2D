@@ -16,9 +16,12 @@ public class LineCollider : PhysicsComponent
     // Start is called before the first frame update
     void Start()
     {
-        position = new Vector2(transform.position.x, transform.position.y);
+        Info = GetComponent<PhysicsInfo>();
 
-        _lineCenter = position;
+        Info.OldPosition = new Vector2(transform.position.x, transform.position.y);
+        Info.NewPosition = new Vector2(transform.position.x, transform.position.y);
+
+        _lineCenter = Info.OldPosition;
         float length = transform.localScale.y;
         Vector3 orientation = transform.eulerAngles;
         Vector2 dir = Vector2.up;
@@ -27,9 +30,7 @@ public class LineCollider : PhysicsComponent
         _lineStart = -dir * length / 2 + _lineCenter;
         _lineEnd = dir * length / 2 + _lineCenter;
         _lineDirVec = dir;
-        //Debug.Log("line Start: " + _lineStart);
-        //Debug.Log("line End: " + _lineEnd);
-        // Debug.Log("Vector Direction: " + dir);
+        
     }
 
     public Vector2 GetLineStart()

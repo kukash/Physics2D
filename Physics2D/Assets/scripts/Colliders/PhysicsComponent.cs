@@ -5,11 +5,11 @@ using UnityEngine;
 
 public class PhysicsComponent : MonoBehaviour
 {
-    protected Vector2 position;
-
+    public PhysicsInfo Info;
     void Start()
     {
-        position = new Vector2(transform.position.x, transform.position.y);
+        Info = GetComponent<PhysicsInfo>();
+
         InitPhysicsComponent();
     }
     public virtual void InitPhysicsComponent() { }
@@ -20,12 +20,19 @@ public class PhysicsComponent : MonoBehaviour
     }
     public Vector2 GetPosition()
     {
-        return position;
+        return Info.NewPosition;
     }
+
+    public Vector2 GetOldPosition()
+    {
+        return Info.OldPosition;
+    }
+    public virtual void Step() { }
 
     public void UpdateComponent()
     {
-        position = new Vector2(transform.position.x, transform.position.y);
+        Vector2DFunctions.Update2DTransform(Info.NewPosition, this);
+        //position = new Vector2(transform.position.x, transform.position.y);
     }
 
 }

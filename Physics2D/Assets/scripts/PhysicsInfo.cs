@@ -15,5 +15,6 @@ public class PhysicsInfo : MonoBehaviour
     public bool IsStatic = true;
     public float radius = 0;
     public MoverComponent mover = null;
-
+  //  public bool[,] gridPos;
+    public List<Vector2Int> gridPos;
 }

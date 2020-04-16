@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5161767463345883272}
   - component: {fileID: 5161767463345883253}
   m_Layer: 0
-  m_Name: cube (1)
+  m_Name: moving Box
   m_TagString: PhysicsObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 5161767463345883274}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -3.04, y: 3.63, z: 10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -103,9 +103,10 @@ MonoBehaviour:
   NewPosition: {x: 0, y: 0}
   verticies: []
   HasMoved: 0
-  IsStatic: 1
+  IsStatic: 0
   radius: 0
   mover: {fileID: 0}
+  gridPos: []
 --- !u!114 &5161767463345883272
 MonoBehaviour:
   m_ObjectHideFlags: 0

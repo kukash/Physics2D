@@ -16,8 +16,8 @@ public class SATCollider : PhysicsComponent
     public Axis[] Axises;
     public override void InitPhysicsComponent()
     {
-        Info = GetComponent<PhysicsInfo>();
 
+        Info = GetComponent<PhysicsInfo>();
         radiusX = transform.localScale.x * 0.5f;
         radiusY = transform.localScale.y * 0.5f;
         Info.OldPosition = Vector2DFunctions.GetTransform2D(this);
@@ -25,7 +25,7 @@ public class SATCollider : PhysicsComponent
         Axises = new Axis[4];
         Info.verticies = new Vector2[4];
         Info.IsStatic = Static;
-        Info.radius = transform.localScale.x/2;
+        Info.radius = transform.localScale.x / 2;
         WriteAxises();
 
         if (GetComponent<MoverComponent>())
@@ -67,17 +67,13 @@ public class SATCollider : PhysicsComponent
             Info.OldPosition = Vector2DFunctions.GetTransform2D(this);
             Vector2DFunctions.Update2DTransform(Info.NewPosition, this);
             WriteAxises();
-
+            //   Debug.Log("not static");
             if (Info.mover)
             {
                 Info.mover.Step();
-
+                // Debug.Log("has mover");
             }
         }
-        
-        
-
-
     }
 }
 public class Axis

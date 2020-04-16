@@ -1,5 +1,7 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections.Generic;
+using UnityScript.Steps;
 
 public class PartitioningGrid : MonoBehaviour
 {
@@ -8,7 +10,11 @@ public class PartitioningGrid : MonoBehaviour
     public int GridWidth = 40;
     public int GridHeight = 25;
     public Color LineColor = Color.red;
+    private int xCount = 0;
+    private int yCount = 0;
 
+    private int collums = 0;
+    private int rows = 0;
     // private const float visualOffsetX = 0.254f;
     private const float visualOffsetX = -0.5f;
 
@@ -29,8 +35,6 @@ public class PartitioningGrid : MonoBehaviour
         Vector3 Down = new Vector3(0, -1, 0);
 
 
-        int xCount = 0;
-        int yCount = 0;
 
         xCount = GridWidth / CellSize;
         yCount = GridHeight / CellSize;
@@ -82,10 +86,11 @@ public class PartitioningGrid : MonoBehaviour
         return ComponentGrid;
     }
 
-    public void SortPhysicsComponents(List<SATCollider> components)
+    public void InitialPhysicsComponentSort(List<SATCollider> components)
     {
-        int collums = 0;
-        int rows = 0;
+
+
+
 
         collums = GridWidth / CellSize;
         rows = GridHeight / CellSize;
@@ -93,8 +98,11 @@ public class PartitioningGrid : MonoBehaviour
         {
             if (currentComponent is SATCollider)
             {
+
+
                 SATCollider collider = currentComponent as SATCollider;
-                //  Debug.Log("Box pos : " + collider.Info.NewPosition);
+                collider.Info.gridPos = new List<Vector2Int>();
+
 
                 //Foreach cell check if any object points are within grid
                 foreach (GridCell cell in _cells)
@@ -105,11 +113,11 @@ public class PartitioningGrid : MonoBehaviour
                         collum += collums;
                         int row = Mathf.FloorToInt((pos.y - GridHeight * 0.5f) / CellSize);
                         row += rows;
-                        //Debug.Log("collum" + collum);
-                        //Debug.Log("row" + row);
+
                         if (!ComponentGrid[collum, row].list.Contains(collider))
                         {
                             ComponentGrid[collum, row].list.Add(collider);
+                            collider.Info.gridPos.Add(new Vector2Int(collum, row));
                         }
 
                     }
@@ -120,8 +128,8 @@ public class PartitioningGrid : MonoBehaviour
         int indexer = 0;
         foreach (var VARIABLE in ComponentGrid)
         {
-            Debug.Log("box" + indexer);
-            Debug.Log("contains :" + VARIABLE.list.Count + "objects");
+            //Debug.Log("box" + indexer);
+            //Debug.Log("contains :" + VARIABLE.list.Count + "objects");
             ++indexer;
         }
 
@@ -129,15 +137,45 @@ public class PartitioningGrid : MonoBehaviour
 
     public void UpdateColliders(List<SATCollider> movedObjects)
     {
+      //  Debug.Log("count" + movedObjects.Count);
+        foreach (SATCollider movedObject in movedObjects)
+        {
+            //remove from all cells
+            foreach (Vector2Int pos in movedObject.Info.gridPos)
+            {
+                ComponentGrid[pos.x, pos.y].list.Remove(movedObject);
+            }
+            movedObject.Info.gridPos.Clear();
+            List<Vector2Int> removePos = new List<Vector2Int>();
 
+            //add again
+            foreach (Vector2 pos in movedObject.Info.verticies)
+            {
+                int collum = Mathf.FloorToInt((pos.x - GridWidth * 0.5f) / CellSize);
+                collum += collums;
+                int row = Mathf.FloorToInt((pos.y - GridHeight * 0.5f) / CellSize);
+                row += rows;
+                if (!ComponentGrid[collum, row].list.Contains(movedObject))
+                {
+                    ComponentGrid[collum, row].list.Add(movedObject);
+                    movedObject.Info.gridPos.Add(new Vector2Int(collum, row));
+                    // Debug.Log("Grid pos" + new Vector2Int(collum, row));
+                }
+            }
+        }
+
+        //int index = 0;
+        //foreach (var componentContainer in ComponentGrid)
+        //{
+        //    index += componentContainer.list.Count;
+        //}
+        //Debug.Log("count" + index);
     }
 }
 
 public class ComponentContainer
 {
     public List<SATCollider> list = new List<SATCollider>();
-
-
 }
 public class GridCell
 {
@@ -177,7 +215,7 @@ public class GridCell
 
     public bool PosInGridCheck(Vector2 position)
     {
-  
+
 
         if (position.x > _minX && position.x < _maxX && position.y > _minY && position.y < _maxY)
         {

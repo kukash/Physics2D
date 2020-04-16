@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4578030392556198995}
   - component: {fileID: 4578030392556199086}
   m_Layer: 0
-  m_Name: cube (1)
+  m_Name: static cube
   m_TagString: PhysicsObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -106,6 +106,7 @@ MonoBehaviour:
   IsStatic: 1
   radius: 0
   mover: {fileID: 0}
+  gridPos: []
 --- !u!114 &4578030392556198995
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -122,7 +123,7 @@ MonoBehaviour:
   Type: 0
   radiusX: 0
   radiusY: 0
-  Static: 0
+  Static: 1
 --- !u!114 &4578030392556199086
 MonoBehaviour:
   m_ObjectHideFlags: 0

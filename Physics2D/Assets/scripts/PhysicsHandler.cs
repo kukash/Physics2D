@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -20,6 +21,8 @@ public class PhysicsHandler : MonoBehaviour
     private List<GameObject> _PhysicsGameObjects;
     private Dictionary<GameObject, PhysicsComponent> _gameObjectPhysicsComponentMap;
 
+    private List<SATCollider> _movingColliders;
+
     private List<GameObject> _CollidedObjects;
     private Dictionary<GameObject, CollisionInfo> _CollidedObjectsMap;
 
@@ -31,41 +34,49 @@ public class PhysicsHandler : MonoBehaviour
     private int _botBound;
     void Start()
     {
+        if (!movingPrefab.GetComponent<PhysicsComponent>() || !staticPrefab.GetComponent<PhysicsComponent>())
+        {
+            Debug.LogError("PREFAB ASSIGNED DOES NOT HAVE PHYSICS COMPONENT");
+        }
         InitLists();
         InitGrid();
         if (spawnRandomObjects) { Spawn(); }
-      //  LoadPhysicsObjects();
-      //  InitGrid();
+        //  LoadPhysicsObjects();
+        //  InitGrid();
     }
 
     private void Spawn()
     {
-    
-        float newX = 0;
-        float newY = 0;
-
         for (int i = 0; i < staticObjectCount; i++)
         {
-            newX = Random.Range((float)_leftBound+1, (float)_rightBound-1);
-            newY = Random.Range((float)_botBound+1, (float)_topBound-1);
-            Vector2 pos = new Vector2(newX, newY);
-            Debug.Log(pos);
-            GameObject newObject = Instantiate(staticPrefab);
-            Vector2DFunctions.Update2DTransform(pos,newObject.transform);
-            
-            _SATColliders.Add(newObject.GetComponent<SATCollider>());
-            newObject.GetComponent<SATCollider>().InitPhysicsComponent();
-            _PhysicsGameObjects.Add(newObject);
-            _gameObjectPhysicsComponentMap.Add(newObject, newObject.GetComponent<SATCollider>());
-
+            createObject(staticPrefab);
         }
 
         for (int i = 0; i < movingObjectsCount; i++)
         {
-
+            createObject(movingPrefab);
         }
-        grid.SortPhysicsComponents(_SATColliders);
+        grid.InitialPhysicsComponentSort(_SATColliders);
+    }
+    private void createObject(GameObject prefab)
+    {
+        float newX = Random.Range((float)_leftBound + 5, (float)_rightBound - 5);
+        float newY = Random.Range((float)_botBound + 5, (float)_topBound - 5);
 
+        Vector2 pos = new Vector2(newX, newY);
+        Debug.Log(pos);
+        GameObject newObject = Instantiate(prefab);
+        Vector2DFunctions.Update2DTransform(pos, newObject.transform);
+        SATCollider collider = newObject.GetComponent<SATCollider>();
+        _SATColliders.Add(collider);
+        collider.InitPhysicsComponent();
+        _PhysicsGameObjects.Add(newObject);
+        _physicsComponents.Add(collider);
+        _gameObjectPhysicsComponentMap.Add(newObject, collider);
+        if (!collider.Static)
+        {
+            _movingColliders.Add(collider);
+        }
     }
     private void InitGrid()
     {
@@ -83,6 +94,7 @@ public class PhysicsHandler : MonoBehaviour
     private void InitLists()
     {
         //init lists
+        _movingColliders = new List<SATCollider>();
         _PhysicsGameObjects = new List<GameObject>();
         _CollidedObjects = new List<GameObject>();
         _physicsComponents = new List<PhysicsComponent>();
@@ -139,11 +151,11 @@ public class PhysicsHandler : MonoBehaviour
 
     private void UpdateObjects()
     {
+        //  Debug.Log("components :" + _physicsComponents.Count);
         foreach (PhysicsComponent component in _physicsComponents)
         {
             if (!component.IsStatic()) component.UpdateComponent();
             ReflectOnBorders(component);
-
         }
     }
     //oversimplified reflection for debugging
@@ -152,35 +164,34 @@ public class PhysicsHandler : MonoBehaviour
         float radius = component.Info.radius;
         Vector2 pos = component.Info.NewPosition;
 
-        if (pos.x + radius > _rightBound)
+        if (pos.x + radius > _rightBound-1)
         {
-            Debug.Log("Reflecting");
             component.Info.Direction = Vector2.Reflect(component.Info.Direction, Vector2.left);
         }
 
-        if (pos.x - radius < _leftBound)
+        if (pos.x - radius < _leftBound+1)
         {
-            Debug.Log("Reflecting");
             component.Info.Direction = Vector2.Reflect(component.Info.Direction, Vector2.right);
         }
 
-        if (pos.y + radius > _topBound)
+        if (pos.y + radius > _topBound-1)
         {
-            Debug.Log("Reflecting");
             component.Info.Direction = Vector2.Reflect(component.Info.Direction, Vector2.down);
         }
-        if (pos.y - radius < _botBound)
+        if (pos.y - radius < _botBound+1)
         {
-            Debug.Log("Reflecting");
             component.Info.Direction = Vector2.Reflect(component.Info.Direction, Vector2.up);
         }
     }
     private void StartUpdate()
     {
+
+        grid.UpdateColliders(_movingColliders);
+
         foreach (PhysicsComponent component in _physicsComponents)
         {
             //isStatic always returns false if it is not overwritten
-            if (!component.IsStatic()) component.Step();
+            if (!component.IsStatic()) { component.Step(); }
         }
     }
 
@@ -313,7 +324,7 @@ public class PhysicsHandler : MonoBehaviour
             //returns the minimum and maximum Dot product between the axis and all the verticies
             Tuple<float, float> minMaxA = ProjectShape.Project(axis, a.Info.verticies);
             Tuple<float, float> minMaxB = ProjectShape.Project(axis, b.Info.verticies);
-            
+
             if (!ProjectShape.Overlap(minMaxA, minMaxB))
             {
                 //stop collision detection if no Overlap was calculated
@@ -403,7 +414,7 @@ public class PhysicsHandler : MonoBehaviour
 
         if (sphereInfo.Speed > 0)
         {
-         
+
             float oldDistance = SphereLineDistance(sphereInfo.OldPosition, line);
             float newDistance = SphereLineDistance(sphereInfo.NewPosition, line);
             float a = oldDistance - sphere.GetRadius();
@@ -412,7 +423,7 @@ public class PhysicsHandler : MonoBehaviour
             float t = a / b;
 
             Vector2 offset = sphereInfo.Direction.normalized * t * sphereInfo.Velocity;
-         
+
             pointOfImpact = sphereInfo.OldPosition + offset;
 
         }
